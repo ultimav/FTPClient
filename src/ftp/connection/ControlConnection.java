@@ -1,6 +1,6 @@
 package ftp.connection;
 
-import ftp.exception.LoginIncorrectException;
+import ftp.exception.NotLoggedInException;
 import ftp.exception.NoConnectionException;
 import ftp.exception.ServiceUnavailableException;
 
@@ -76,10 +76,10 @@ public class ControlConnection {
      * @throws java.io.IOException                       If an I/O error occurs.
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
-     * @throws ftp.exception.LoginIncorrectException     If username or password is incorrect.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
      */
     public void login(String user, String pass)
-            throws IOException, ServiceUnavailableException, NoConnectionException, LoginIncorrectException {
+            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
         if (connected) {
             this.user = user;
             this.pass = pass;
@@ -98,8 +98,8 @@ public class ControlConnection {
                 case ReplayCode.SERVICE_UNAVAILABLE:
                     close();
                     throw new ServiceUnavailableException(replay.text);
-                case ReplayCode.INCORRECT_LOGIN:
-                    throw new LoginIncorrectException(replay.text);
+                case ReplayCode.NOT_LOGGED_IN:
+                    throw new NotLoggedInException(replay.text);
             }
             connectionEstablished = true;
         } else {
@@ -113,10 +113,10 @@ public class ControlConnection {
      * @throws java.io.IOException                       If an I/O error occurs.
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
-     * @throws ftp.exception.LoginIncorrectException     If username or password is incorrect.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
      */
     private void restoreConnection()
-            throws IOException, ServiceUnavailableException, NoConnectionException, LoginIncorrectException {
+            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
         open(host, port);
         login(user, pass);
     }
@@ -158,10 +158,10 @@ public class ControlConnection {
      * @throws java.io.IOException                       If an I/O error occurs.
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
-     * @throws ftp.exception.LoginIncorrectException     If username or password is incorrect.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
      */
     public Replay sendCommand(String command)
-            throws IOException, ServiceUnavailableException, NoConnectionException, LoginIncorrectException {
+            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
         if (connected) {
             if (socket.getInputStream().available() > 0) {
                 Replay replay = readReplay();
