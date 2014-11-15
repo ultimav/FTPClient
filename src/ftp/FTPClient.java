@@ -1,15 +1,10 @@
 package ftp;
 
-import ftp.connection.Command;
-import ftp.connection.ControlConnection;
-import ftp.connection.Replay;
-import ftp.connection.ReplayCode;
-import ftp.exception.ActionNotTakenException;
-import ftp.exception.NotLoggedInException;
-import ftp.exception.NoConnectionException;
-import ftp.exception.ServiceUnavailableException;
+import ftp.connection.*;
+import ftp.exception.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * Client for FTP server.
@@ -28,12 +23,14 @@ public class FTPClient {
     public static final int DEFAULT_PORT = 21;
 
     private ControlConnection control;
+    private DataConnection data;
 
     /**
      * Create FTP Client.
      */
     public FTPClient() {
         control = new ControlConnection();
+        data = new DataConnection();
     }
 
     /**
@@ -167,4 +164,114 @@ public class FTPClient {
                 throw new ActionNotTakenException(replay.text);
         }
     }
+
+    /**
+     * Open data connection in the passive mode.
+     *
+     * @throws java.io.IOException                       If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException       If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     */
+    private void openPassiveDTP()
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException {
+        Replay replay = control.sendCommand(Command.PASSIVE);
+
+        switch (replay.code) {
+            case ReplayCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(replay.text);
+            case ReplayCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(replay.text);
+        }
+
+        int startIndex = replay.text.indexOf('(') + 1;
+        int stopIndex = replay.text.indexOf(')');
+        String hostPort = replay.text.substring(startIndex, stopIndex);
+        String[] address = hostPort.split(",");
+
+        String host = address[0] + "." + address[1] + "." + address[2] + "." + address[3];
+        int port = Integer.parseInt(address[4]) * 256 + Integer.parseInt(address[5]);
+
+        data.open(host, port);
+    }
+
+    /**
+     * Get list of files of current working directory from the server.
+     *
+     * @return list of files.
+     * @throws java.io.IOException                           If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException           If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException     If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException            If user not logged in.
+     * @throws ftp.exception.FileActionNotTakenException     If file unavailable (e.g., file busy).
+     * @throws ftp.exception.CantOpenDataConnectionException If data connection can't be opened.
+     * @throws ftp.exception.ConnectionClosedException       If connection closed.
+     * @throws ftp.exception.ActionAbortedException          If action aborted.
+     */
+    public ArrayList<RemoteFile> getFilesList()
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            FileActionNotTakenException, CantOpenDataConnectionException, ConnectionClosedException,
+            ActionAbortedException {
+        return getFilesList("");
+    }
+
+    /**
+     * Get list of files in the specified directory (pathName).
+     *
+     * @param pathName directory path.
+     * @return list of files.
+     * @throws java.io.IOException                           If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException           If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException     If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException            If user not logged in.
+     * @throws ftp.exception.FileActionNotTakenException     If file unavailable (e.g., file busy).
+     * @throws ftp.exception.CantOpenDataConnectionException If data connection can't be opened.
+     * @throws ftp.exception.ConnectionClosedException       If connection closed.
+     * @throws ftp.exception.ActionAbortedException          If action aborted.
+     */
+    public ArrayList<RemoteFile> getFilesList(String pathName)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            FileActionNotTakenException, CantOpenDataConnectionException, ConnectionClosedException,
+            ActionAbortedException {
+        openPassiveDTP();
+
+        Replay replay = control.sendCommand(Command.LIST + pathName);
+
+        switch (replay.code) {
+            case ReplayCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(replay.text);
+            case ReplayCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(replay.text);
+            case ReplayCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(replay.text);
+            case ReplayCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(replay.text);
+            case ReplayCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(replay.text);
+            case ReplayCode.REQUESTED_ACTION_ABORTED:
+                throw new ActionAbortedException(replay.text);
+        }
+
+        ArrayList<RemoteFile> filesList = new ArrayList<RemoteFile>();
+
+        for (String fileProperty : data.readLines()) {
+            filesList.add(new RemoteFile(fileProperty));
+        }
+
+        replay = control.readReplay();
+
+        data.close();
+
+        switch (replay.code) {
+            case ReplayCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(replay.text);
+            case ReplayCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(replay.text);
+            case ReplayCode.REQUESTED_ACTION_ABORTED:
+                throw new ActionAbortedException(replay.text);
+        }
+
+        return filesList;
+    }
+
 }

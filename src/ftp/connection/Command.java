@@ -12,5 +12,5 @@ public interface Command {
     String CHANGE_WORKING_DIRECTORY = "CWD ";
     String CHANGE_TO_PARENT_DIRECTORY = "CDUP";
     String MAKE_DIRECTORY = "MKD ";
-    String LIST = "LIST";
+    String LIST = "LIST ";
 }

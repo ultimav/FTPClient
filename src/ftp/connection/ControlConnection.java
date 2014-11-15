@@ -1,7 +1,7 @@
 package ftp.connection;
 
-import ftp.exception.NotLoggedInException;
 import ftp.exception.NoConnectionException;
+import ftp.exception.NotLoggedInException;
 import ftp.exception.ServiceUnavailableException;
 
 import java.io.*;
@@ -127,7 +127,7 @@ public class ControlConnection {
      * @return server replay.
      * @throws IOException If an I/O error occurs.
      */
-    private Replay readReplay()
+    public Replay readReplay()
             throws IOException {
         Replay replay = new Replay();
         String replayText = reader.readLine();
@@ -147,6 +147,8 @@ public class ControlConnection {
             connected = false;
         }
 
+        // FOR DEBUG
+        System.out.println(replay);
         return replay;
     }
 

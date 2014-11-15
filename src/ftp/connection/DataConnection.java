@@ -1,9 +1,8 @@
 package ftp.connection;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 
 /**
  * Data connection with server.
@@ -42,6 +41,21 @@ public class DataConnection {
             dataIn = null;
             dataOut = null;
         }
+    }
+
+    /**
+     * Read lines from data stream.
+     *
+     * @throws java.io.IOException If an I/O error occurs.
+     */
+    public ArrayList<String> readLines() throws IOException {
+        ArrayList<String> lines = new ArrayList<String>();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(dataIn));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            lines.add(line);
+        }
+        return lines;
     }
 
 }
