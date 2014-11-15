@@ -82,14 +82,14 @@ public class FTPClient {
      */
     public String printWorkingDirectory()
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException {
-        Replay replay = control.sendCommand(Command.PRINT_WORKING_DIRECTORY);
-        switch (replay.code) {
-            case ReplayCode.SERVICE_UNAVAILABLE:
-                throw new ServiceUnavailableException(replay.text);
-            case ReplayCode.NOT_LOGGED_IN:
-                throw new NotLoggedInException(replay.text);
+        Reply reply = control.sendCommand(Command.PRINT_WORKING_DIRECTORY);
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
         }
-        return replay.text;
+        return reply.text;
     }
 
     /**
@@ -106,14 +106,14 @@ public class FTPClient {
     public void changeWorkingDirectory(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             ActionNotTakenException {
-        Replay replay = control.sendCommand(Command.CHANGE_WORKING_DIRECTORY + pathName);
-        switch (replay.code) {
-            case ReplayCode.SERVICE_UNAVAILABLE:
-                throw new ServiceUnavailableException(replay.text);
-            case ReplayCode.NOT_LOGGED_IN:
-                throw new NotLoggedInException(replay.text);
-            case ReplayCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(replay.text);
+        Reply reply = control.sendCommand(Command.CHANGE_WORKING_DIRECTORY + pathName);
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
         }
     }
 
@@ -129,14 +129,14 @@ public class FTPClient {
     public void changeToParentDirectory()
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             ActionNotTakenException {
-        Replay replay = control.sendCommand(Command.CHANGE_TO_PARENT_DIRECTORY);
-        switch (replay.code) {
-            case ReplayCode.SERVICE_UNAVAILABLE:
-                throw new ServiceUnavailableException(replay.text);
-            case ReplayCode.NOT_LOGGED_IN:
-                throw new NotLoggedInException(replay.text);
-            case ReplayCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(replay.text);
+        Reply reply = control.sendCommand(Command.CHANGE_TO_PARENT_DIRECTORY);
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
         }
     }
 
@@ -154,14 +154,14 @@ public class FTPClient {
     public void makeDirectory(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             ActionNotTakenException {
-        Replay replay = control.sendCommand(Command.MAKE_DIRECTORY + pathName);
-        switch (replay.code) {
-            case ReplayCode.SERVICE_UNAVAILABLE:
-                throw new ServiceUnavailableException(replay.text);
-            case ReplayCode.NOT_LOGGED_IN:
-                throw new NotLoggedInException(replay.text);
-            case ReplayCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(replay.text);
+        Reply reply = control.sendCommand(Command.MAKE_DIRECTORY + pathName);
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
         }
     }
 
@@ -175,18 +175,18 @@ public class FTPClient {
      */
     private void openPassiveDTP()
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException {
-        Replay replay = control.sendCommand(Command.PASSIVE);
+        Reply reply = control.sendCommand(Command.PASSIVE);
 
-        switch (replay.code) {
-            case ReplayCode.SERVICE_UNAVAILABLE:
-                throw new ServiceUnavailableException(replay.text);
-            case ReplayCode.NOT_LOGGED_IN:
-                throw new NotLoggedInException(replay.text);
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
         }
 
-        int startIndex = replay.text.indexOf('(') + 1;
-        int stopIndex = replay.text.indexOf(')');
-        String hostPort = replay.text.substring(startIndex, stopIndex);
+        int startIndex = reply.text.indexOf('(') + 1;
+        int stopIndex = reply.text.indexOf(')');
+        String hostPort = reply.text.substring(startIndex, stopIndex);
         String[] address = hostPort.split(",");
 
         String host = address[0] + "." + address[1] + "." + address[2] + "." + address[3];
@@ -235,21 +235,21 @@ public class FTPClient {
             ActionAbortedException {
         openPassiveDTP();
 
-        Replay replay = control.sendCommand(Command.LIST + pathName);
+        Reply reply = control.sendCommand(Command.LIST + pathName);
 
-        switch (replay.code) {
-            case ReplayCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
-                throw new FileActionNotTakenException(replay.text);
-            case ReplayCode.NOT_LOGGED_IN:
-                throw new NotLoggedInException(replay.text);
-            case ReplayCode.SERVICE_UNAVAILABLE:
-                throw new ServiceUnavailableException(replay.text);
-            case ReplayCode.CANT_OPEN_DATA_CONNECTION:
-                throw new CantOpenDataConnectionException(replay.text);
-            case ReplayCode.CONNECTION_CLOSED:
-                throw new ConnectionClosedException(replay.text);
-            case ReplayCode.REQUESTED_ACTION_ABORTED:
-                throw new ActionAbortedException(replay.text);
+        switch (reply.code) {
+            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(reply.text);
+            case ReplyCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_ABORTED:
+                throw new ActionAbortedException(reply.text);
         }
 
         ArrayList<RemoteFile> filesList = new ArrayList<RemoteFile>();
@@ -258,17 +258,17 @@ public class FTPClient {
             filesList.add(new RemoteFile(fileProperty));
         }
 
-        replay = control.readReplay();
+        reply = control.readReply();
 
         data.close();
 
-        switch (replay.code) {
-            case ReplayCode.CANT_OPEN_DATA_CONNECTION:
-                throw new CantOpenDataConnectionException(replay.text);
-            case ReplayCode.CONNECTION_CLOSED:
-                throw new ConnectionClosedException(replay.text);
-            case ReplayCode.REQUESTED_ACTION_ABORTED:
-                throw new ActionAbortedException(replay.text);
+        switch (reply.code) {
+            case ReplyCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(reply.text);
+            case ReplyCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_ABORTED:
+                throw new ActionAbortedException(reply.text);
         }
 
         return filesList;

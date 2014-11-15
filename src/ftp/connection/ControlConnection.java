@@ -43,12 +43,12 @@ public class ControlConnection {
         socket = new Socket(host, port);
         writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        Replay replay = readReplay();
-        switch (replay.code) {
-            case ReplayCode.SERVICE_READY_IN_NNN_MINUTES:
-            case ReplayCode.SERVICE_UNAVAILABLE:
+        Reply reply = readReply();
+        switch (reply.code) {
+            case ReplyCode.SERVICE_READY_IN_NNN_MINUTES:
+            case ReplyCode.SERVICE_UNAVAILABLE:
                 close();
-                throw new ServiceUnavailableException(replay.text);
+                throw new ServiceUnavailableException(reply.text);
         }
         connected = true;
     }
@@ -86,20 +86,20 @@ public class ControlConnection {
             writer.println(Command.USER + user);
             writer.println(Command.PASS + pass);
             writer.flush();
-            Replay replay;
-            replay = readReplay();
-            switch (replay.code) {
-                case ReplayCode.SERVICE_UNAVAILABLE:
+            Reply reply;
+            reply = readReply();
+            switch (reply.code) {
+                case ReplyCode.SERVICE_UNAVAILABLE:
                     close();
-                    throw new ServiceUnavailableException(replay.text);
+                    throw new ServiceUnavailableException(reply.text);
             }
-            replay = readReplay();
-            switch (replay.code) {
-                case ReplayCode.SERVICE_UNAVAILABLE:
+            reply = readReply();
+            switch (reply.code) {
+                case ReplyCode.SERVICE_UNAVAILABLE:
                     close();
-                    throw new ServiceUnavailableException(replay.text);
-                case ReplayCode.NOT_LOGGED_IN:
-                    throw new NotLoggedInException(replay.text);
+                    throw new ServiceUnavailableException(reply.text);
+                case ReplyCode.NOT_LOGGED_IN:
+                    throw new NotLoggedInException(reply.text);
             }
             connectionEstablished = true;
         } else {
@@ -124,55 +124,55 @@ public class ControlConnection {
     /**
      * Reade reply from the server.
      *
-     * @return server replay.
+     * @return server reply.
      * @throws IOException If an I/O error occurs.
      */
-    public Replay readReplay()
+    public Reply readReply()
             throws IOException {
-        Replay replay = new Replay();
-        String replayText = reader.readLine();
-        replay.code = Integer.parseInt(replayText.substring(0, 3));
+        Reply reply = new Reply();
+        String replyText = reader.readLine();
+        reply.code = Integer.parseInt(replyText.substring(0, 3));
 
-        if (replayText.charAt(3) == '-') {
-            StringBuilder replayTextBuilder = new StringBuilder(replayText.substring(4));
-            while (!(replayText = reader.readLine()).contains(replay.code + " ")) {
-                replayTextBuilder.append("\n").append(replayText);
+        if (replyText.charAt(3) == '-') {
+            StringBuilder replyTextBuilder = new StringBuilder(replyText.substring(4));
+            while (!(replyText = reader.readLine()).contains(reply.code + " ")) {
+                replyTextBuilder.append("\n").append(replyText);
             }
-            replay.text = replayTextBuilder.toString();
+            reply.text = replyTextBuilder.toString();
         } else {
-            replay.text = replayText.substring(3);
+            reply.text = replyText.substring(3);
         }
 
-        if (replay.code == ReplayCode.SERVICE_UNAVAILABLE) {
+        if (reply.code == ReplyCode.SERVICE_UNAVAILABLE) {
             connected = false;
         }
 
         // FOR DEBUG
-        System.out.println(replay);
-        return replay;
+        System.out.println(reply);
+        return reply;
     }
 
     /**
      * Send command to the FTP server.
      *
      * @param command command to send.
-     * @return server replay.
+     * @return server reply.
      * @throws java.io.IOException                       If an I/O error occurs.
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      */
-    public Replay sendCommand(String command)
+    public Reply sendCommand(String command)
             throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
         if (connected) {
             if (socket.getInputStream().available() > 0) {
-                Replay replay = readReplay();
-                if (replay.code == ReplayCode.SERVICE_UNAVAILABLE) {
+                Reply reply = readReply();
+                if (reply.code == ReplyCode.SERVICE_UNAVAILABLE) {
                     if (connectionEstablished) {
                         restoreConnection();
                         return sendCommand(command);
                     } else {
-                        throw new ServiceUnavailableException(replay.text);
+                        throw new ServiceUnavailableException(reply.text);
                     }
                 } else {
                     return sendCommand(command);
@@ -180,7 +180,7 @@ public class ControlConnection {
             } else {
                 writer.println(command);
                 writer.flush();
-                return readReplay();
+                return readReply();
             }
         } else {
             if (connectionEstablished) {

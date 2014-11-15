@@ -5,7 +5,7 @@ package ftp.connection;
  *
  * @author Vojko Vladimir
  */
-public class Replay {
+public class Reply {
 
     public int code;
     public String text;
