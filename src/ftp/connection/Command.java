@@ -13,4 +13,6 @@ public interface Command {
     String CHANGE_TO_PARENT_DIRECTORY = "CDUP";
     String MAKE_DIRECTORY = "MKD ";
     String LIST = "LIST ";
+    String RENAME_FROM = "RNFR ";
+    String RENAME_TO = "RNTO ";
 }

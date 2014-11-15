@@ -166,6 +166,51 @@ public class FTPClient {
     }
 
     /**
+     * Rename file.
+     *
+     * @param fromPathName old file name (with full path, or without if file is in current working directory).
+     * @param toPathName   new file name (with full path, or without if file is in current working directory).
+     * @throws java.io.IOException                               If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException               If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException         If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException                If user not logged in.
+     * @throws ftp.exception.ActionNotTakenException             If action not taken.
+     * @throws ftp.exception.FileActionNotTakenException         If file unavailable (e.g., file busy).
+     * @throws ftp.exception.FileNameNotAllowedException         If file nam is not allowed.
+     * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
+     */
+    public void renameFromTo(String fromPathName, String toPathName)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            ActionNotTakenException, FileActionNotTakenException, FileNameNotAllowedException,
+            NeedAccountForStoringFilesException {
+        Reply reply = control.sendCommand(Command.RENAME_FROM + fromPathName);
+
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+        }
+
+        reply = control.sendCommand(Command.RENAME_TO + toPathName);
+
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.FILE_NAME_NOT_ALLOWED:
+                throw new FileNameNotAllowedException(reply.text);
+            case ReplyCode.NEED_ACCOUNT_FOR_STORING_FILES:
+                throw new NeedAccountForStoringFilesException(reply.text);
+        }
+    }
+
+    /**
      * Open data connection in the passive mode.
      *
      * @throws java.io.IOException                       If an I/O error occurs.
