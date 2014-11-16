@@ -17,4 +17,5 @@ public interface Command {
     String LIST = "LIST ";
     String RENAME_FROM = "RNFR ";
     String RENAME_TO = "RNTO ";
+    String RETRIEVE = "RETR ";
 }

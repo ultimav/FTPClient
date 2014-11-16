@@ -345,4 +345,72 @@ public class FTPClient {
         return filesList;
     }
 
+    /**
+     * This command causes the server-DTP to transfer a copy of the file, specified in the pathname,
+     * to the user-DTP at the data connection.
+     *
+     * @param pathName path with name of file to retrieve.
+     *                 (only name if file is in the current directory).
+     * @return file as array of bytes.
+     * @throws java.io.IOException                           If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException           If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException     If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException            If user not logged in.
+     * @throws ftp.exception.FileActionNotTakenException     If file unavailable (e.g., file busy).
+     * @throws ftp.exception.CantOpenDataConnectionException If data connection can't be opened.
+     * @throws ftp.exception.ConnectionClosedException       If connection closed.
+     * @throws ftp.exception.ActionAbortedException          If action aborted.
+     * @throws ftp.exception.ActionNotTakenException         If action not taken.
+     */
+    public byte[] getFile(String pathName)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            CantOpenDataConnectionException, ConnectionClosedException, ActionAbortedException,
+            FileActionNotTakenException, ActionNotTakenException {
+        byte[] file;
+
+        openPassiveDTP();
+
+        Reply reply = control.sendCommand(Command.RETRIEVE + pathName);
+
+        switch (reply.code) {
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(reply.text);
+            case ReplyCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_ABORTED:
+                throw new ActionAbortedException(reply.text);
+            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
+        }
+
+        file = data.getBytes();
+
+        reply = control.readReply();
+
+        switch (reply.code) {
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(reply.text);
+            case ReplyCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_ABORTED:
+                throw new ActionAbortedException(reply.text);
+            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
+        }
+
+        return file;
+    }
+
 }

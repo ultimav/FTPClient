@@ -58,4 +58,16 @@ public class DataConnection {
         return lines;
     }
 
+    /**
+     * Read bytes from data stream.
+     *
+     * @return readed bytes.
+     * @throws java.io.IOException If an I/O error occurs.
+     */
+    public byte[] getBytes() throws IOException {
+        byte[] bytes = new byte[dataIn.available()];
+        dataIn.read(bytes);
+        return bytes;
+    }
+
 }
