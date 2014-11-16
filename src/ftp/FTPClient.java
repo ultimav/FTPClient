@@ -166,6 +166,32 @@ public class FTPClient {
     }
 
     /**
+     * This command causes the directory specified in the pathname to be removed as a directory
+     * (if the pathname is absolute) or as a subdirectory of the current working directory
+     * (if the pathname is relative).
+     *
+     * @param pathName path with name of directory to remove.
+     * @throws java.io.IOException                       If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException       If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     */
+    public void removeDirectory(String pathName)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            ActionNotTakenException {
+        Reply reply = control.sendCommand(Command.REMOVE_DIRECTORY + pathName);
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
+                throw new ActionNotTakenException(reply.text);
+        }
+    }
+
+    /**
      * Rename file.
      *
      * @param fromPathName old file name (with full path, or without if file is in current working directory).
