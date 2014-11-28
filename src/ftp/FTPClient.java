@@ -351,6 +351,7 @@ public class FTPClient {
      *
      * @param pathName path with name of file to retrieve.
      *                 (only name if file is in the current directory).
+     * @param listener bytes read listener.
      * @return file as array of bytes.
      * @throws java.io.IOException                           If an I/O error occurs.
      * @throws ftp.exception.NoConnectionException           If there is no connection.
@@ -362,7 +363,7 @@ public class FTPClient {
      * @throws ftp.exception.ActionAbortedException          If action aborted.
      * @throws ftp.exception.ActionNotTakenException         If action not taken.
      */
-    public byte[] getFile(String pathName)
+    public byte[] getFile(String pathName, OnBytesReadListener listener)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             CantOpenDataConnectionException, ConnectionClosedException, ActionAbortedException,
             FileActionNotTakenException, ActionNotTakenException {
@@ -389,7 +390,11 @@ public class FTPClient {
                 throw new ActionNotTakenException(reply.text);
         }
 
-        file = data.getBytes();
+        int startIndex = reply.text.lastIndexOf('(') + 1;
+        int stopIndex = reply.text.lastIndexOf(" bytes)");
+        int size = Integer.parseInt(reply.text.substring(startIndex, stopIndex));
+
+        file = data.getBytes(size, listener);
 
         reply = control.readReply();
 

@@ -61,12 +61,29 @@ public class DataConnection {
     /**
      * Read bytes from data stream.
      *
-     * @return readed bytes.
+     * @param size     size of bytes to read.
+     * @param listener bytes read listener.
+     * @return read bytes.
      * @throws java.io.IOException If an I/O error occurs.
      */
-    public byte[] getBytes() throws IOException {
-        byte[] bytes = new byte[dataIn.available()];
-        dataIn.read(bytes);
+    public byte[] getBytes(int size, OnBytesReadListener listener) throws IOException {
+        byte[] bytes = new byte[size];
+        int totalRead = 0;
+
+        while (totalRead < size) {
+            int bytesRead = dataIn.read(bytes, totalRead, size - totalRead);
+
+            if (bytesRead < 0) {
+                throw new IOException("Data stream ended prematurely");
+            }
+
+            totalRead += bytesRead;
+
+            if (listener != null) {
+                listener.onBytesRead(size, totalRead);
+            }
+        }
+
         return bytes;
     }
 
