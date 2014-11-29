@@ -6,7 +6,7 @@ package ftp.exception;
  *
  * @author Vojko Vladimir
  */
-public class FileNameNotAllowedException extends FTPException {
+public class FileNameNotAllowedException extends ActionNotTakenException {
 
     public FileNameNotAllowedException(String msg) {
         super(msg);

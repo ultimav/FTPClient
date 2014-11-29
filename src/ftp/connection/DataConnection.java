@@ -11,6 +11,8 @@ import java.util.ArrayList;
  */
 public class DataConnection {
 
+    private static final int BLOCK_SIZE = 1024;
+
     private Socket passive;
     private InputStream dataIn;
     private OutputStream dataOut;
@@ -85,6 +87,37 @@ public class DataConnection {
         }
 
         return bytes;
+    }
+
+    /**
+     * Write bytes to data output stream.
+     *
+     * @param bytes    bytes to write.
+     * @param listener bytes write listener.
+     * @throws java.io.IOException If an I/O error occurs.
+     */
+    public void writeBytes(byte[] bytes, OnBytesWriteListener listener) throws IOException {
+        int blocks = bytes.length / BLOCK_SIZE;
+        int module = (bytes.length < BLOCK_SIZE) ? bytes.length : bytes.length % BLOCK_SIZE;
+        int totalWrote = 0;
+
+        for (int i = 0; i < blocks; i++) {
+            dataOut.write(bytes, BLOCK_SIZE * i, BLOCK_SIZE);
+            totalWrote += BLOCK_SIZE;
+            if (listener != null) {
+                listener.onBytesWrite(bytes.length, totalWrote);
+            }
+        }
+
+        if (module != 0) {
+            dataOut.write(bytes, BLOCK_SIZE * blocks, module);
+            totalWrote += module;
+            if (listener != null) {
+                listener.onBytesWrite(bytes.length, totalWrote);
+            }
+        }
+
+        dataOut.flush();
     }
 
 }

@@ -18,4 +18,5 @@ public interface Command {
     String RENAME_FROM = "RNFR ";
     String RENAME_TO = "RNTO ";
     String RETRIEVE = "RETR ";
+    String STORE = "STOR ";
 }

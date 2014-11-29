@@ -1,11 +1,11 @@
 package ftp.exception;
 
 /**
- * Indicates that Requested action aborted: local error in processing.
+ * Indicates that Requested action aborted.
  *
  * @author Vojko Vladimir
  */
-public class ActionAbortedException extends FTPException {
+public abstract class ActionAbortedException extends FTPException {
 
     public ActionAbortedException(String msg) {
         super(msg);

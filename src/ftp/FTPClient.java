@@ -112,8 +112,8 @@ public class FTPClient {
                 throw new ServiceUnavailableException(reply.text);
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
         }
     }
 
@@ -135,8 +135,8 @@ public class FTPClient {
                 throw new ServiceUnavailableException(reply.text);
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
         }
     }
 
@@ -160,8 +160,8 @@ public class FTPClient {
                 throw new ServiceUnavailableException(reply.text);
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
         }
     }
 
@@ -186,8 +186,8 @@ public class FTPClient {
                 throw new ServiceUnavailableException(reply.text);
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
         }
     }
 
@@ -216,9 +216,9 @@ public class FTPClient {
                 throw new ServiceUnavailableException(reply.text);
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
-            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
                 throw new FileActionNotTakenException(reply.text);
         }
 
@@ -309,7 +309,7 @@ public class FTPClient {
         Reply reply = control.sendCommand(Command.LIST + pathName);
 
         switch (reply.code) {
-            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
                 throw new FileActionNotTakenException(reply.text);
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
@@ -319,8 +319,8 @@ public class FTPClient {
                 throw new CantOpenDataConnectionException(reply.text);
             case ReplyCode.CONNECTION_CLOSED:
                 throw new ConnectionClosedException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_ABORTED:
-                throw new ActionAbortedException(reply.text);
+            case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+                throw new LocalErrorInProcessingException(reply.text);
         }
 
         ArrayList<RemoteFile> filesList = new ArrayList<RemoteFile>();
@@ -338,8 +338,8 @@ public class FTPClient {
                 throw new CantOpenDataConnectionException(reply.text);
             case ReplyCode.CONNECTION_CLOSED:
                 throw new ConnectionClosedException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_ABORTED:
-                throw new ActionAbortedException(reply.text);
+            case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+                throw new LocalErrorInProcessingException(reply.text);
         }
 
         return filesList;
@@ -382,12 +382,12 @@ public class FTPClient {
                 throw new CantOpenDataConnectionException(reply.text);
             case ReplyCode.CONNECTION_CLOSED:
                 throw new ConnectionClosedException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_ABORTED:
-                throw new ActionAbortedException(reply.text);
-            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+            case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+                throw new LocalErrorInProcessingException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
                 throw new FileActionNotTakenException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
         }
 
         int startIndex = reply.text.lastIndexOf('(') + 1;
@@ -407,15 +407,98 @@ public class FTPClient {
                 throw new CantOpenDataConnectionException(reply.text);
             case ReplyCode.CONNECTION_CLOSED:
                 throw new ConnectionClosedException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_ABORTED:
-                throw new ActionAbortedException(reply.text);
-            case ReplyCode.REQUESTED_FILE_ACTION_NOT_TAKEN:
+            case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+                throw new LocalErrorInProcessingException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
                 throw new FileActionNotTakenException(reply.text);
-            case ReplyCode.REQUESTED_ACTION_NOT_TAKEN:
-                throw new ActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
         }
 
         return file;
     }
 
+    /**
+     * This command causes the server-DTP to accept the data transferred via the data connection and to store
+     * the data as a file at the server site. If the file specified in the pathname exists at the server site,
+     * then its contents shall be replaced by the data being transferred. A new file is created
+     * at the server site if the file specified in the pathname does not already exist.
+     *
+     * @param file     file to send as array og bytes.
+     * @param pathName path with name of file to store.
+     *                 (only name if file is in the current directory).
+     * @param listener bytes write listener.
+     * @throws java.io.IOException                               If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException               If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException         If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException                If user not logged in.
+     * @throws ftp.exception.FileActionNotTakenException         If file unavailable (e.g., file busy).
+     * @throws ftp.exception.CantOpenDataConnectionException     If data connection can't be opened.
+     * @throws ftp.exception.ConnectionClosedException           If connection closed.
+     * @throws ftp.exception.ActionAbortedException              If action aborted.
+     * @throws ftp.exception.ActionNotTakenException             If action not taken.
+     * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
+     */
+    public void sendFile(byte[] file, String pathName, OnBytesWriteListener listener)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            CantOpenDataConnectionException, ConnectionClosedException, ActionAbortedException,
+            FileActionNotTakenException, FileActionAbortedException, NeedAccountForStoringFilesException,
+            ActionNotTakenException {
+        openPassiveDTP();
+
+        Reply reply = control.sendCommand(Command.STORE + pathName);
+
+        switch (reply.code) {
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(reply.text);
+            case ReplyCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(reply.text);
+            case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+            case ReplyCode.UNKNOWN_PAGE_TYPE:
+                throw new PageTypeUnknownException(reply.text);
+            case ReplyCode.FILE_ACTION_ABORTED:
+                throw new FileActionAbortedException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.NEED_ACCOUNT_FOR_STORING_FILES:
+                throw new NeedAccountForStoringFilesException(reply.text);
+            case ReplyCode.INSUFFICIENT_STORAGE_SPACE:
+                throw new InsufficientStorageSpaceException(reply.text);
+            case ReplyCode.FILE_NAME_NOT_ALLOWED:
+                throw new FileNameNotAllowedException(reply.text);
+        }
+
+        data.writeBytes(file, listener);
+
+        reply = control.readReply();
+
+        switch (reply.code) {
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.CANT_OPEN_DATA_CONNECTION:
+                throw new CantOpenDataConnectionException(reply.text);
+            case ReplyCode.CONNECTION_CLOSED:
+                throw new ConnectionClosedException(reply.text);
+            case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+            case ReplyCode.UNKNOWN_PAGE_TYPE:
+                throw new PageTypeUnknownException(reply.text);
+            case ReplyCode.FILE_ACTION_ABORTED:
+                throw new FileActionAbortedException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.NEED_ACCOUNT_FOR_STORING_FILES:
+                throw new NeedAccountForStoringFilesException(reply.text);
+            case ReplyCode.INSUFFICIENT_STORAGE_SPACE:
+                throw new InsufficientStorageSpaceException(reply.text);
+            case ReplyCode.FILE_NAME_NOT_ALLOWED:
+                throw new FileNameNotAllowedException(reply.text);
+        }
+
+    }
 }
