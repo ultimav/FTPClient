@@ -435,9 +435,9 @@ public class FTPClient {
      * @throws ftp.exception.FileActionNotTakenException         If file unavailable (e.g., file busy).
      * @throws ftp.exception.CantOpenDataConnectionException     If data connection can't be opened.
      * @throws ftp.exception.ConnectionClosedException           If connection closed.
-     * @throws ftp.exception.ActionAbortedException              If action aborted.
      * @throws ftp.exception.ActionNotTakenException             If action not taken.
      * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
+     * @throws ftp.exception.ActionAbortedException              If action aborted.
      */
     public void sendFile(byte[] file, String pathName, OnBytesWriteListener listener)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
@@ -458,6 +458,7 @@ public class FTPClient {
             case ReplyCode.CONNECTION_CLOSED:
                 throw new ConnectionClosedException(reply.text);
             case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+                throw new LocalErrorInProcessingException(reply.text);
             case ReplyCode.UNKNOWN_PAGE_TYPE:
                 throw new PageTypeUnknownException(reply.text);
             case ReplyCode.FILE_ACTION_ABORTED:
@@ -486,6 +487,7 @@ public class FTPClient {
             case ReplyCode.CONNECTION_CLOSED:
                 throw new ConnectionClosedException(reply.text);
             case ReplyCode.LOCAL_ERROR_IN_PROCESSING:
+                throw new LocalErrorInProcessingException(reply.text);
             case ReplyCode.UNKNOWN_PAGE_TYPE:
                 throw new PageTypeUnknownException(reply.text);
             case ReplyCode.FILE_ACTION_ABORTED:
