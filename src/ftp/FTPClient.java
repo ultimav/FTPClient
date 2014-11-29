@@ -503,4 +503,34 @@ public class FTPClient {
         }
 
     }
+
+    /**
+     * This command causes the file specified in the pathname to be deleted at the server site.
+     *
+     * @param pathName path with name of file to delete.
+     *                 (only name if file is in the current directory).
+     * @throws java.io.IOException                       If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException       If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.FileActionNotTakenException If file unavailable (e.g., file busy).
+     * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     */
+    public void deleteFile(String pathName)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            FileActionNotTakenException, ActionNotTakenException {
+        Reply reply = control.sendCommand(Command.DELETE + pathName);
+
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
+        }
+    }
+
 }
