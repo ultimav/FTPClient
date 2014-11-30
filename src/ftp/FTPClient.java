@@ -432,18 +432,22 @@ public class FTPClient {
      * @throws ftp.exception.NoConnectionException               If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException         If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException                If user not logged in.
-     * @throws ftp.exception.FileActionNotTakenException         If file unavailable (e.g., file busy).
      * @throws ftp.exception.CantOpenDataConnectionException     If data connection can't be opened.
      * @throws ftp.exception.ConnectionClosedException           If connection closed.
-     * @throws ftp.exception.ActionNotTakenException             If action not taken.
+     * @throws ftp.exception.LocalErrorInProcessingException     If there is local error in processing.
+     * @throws ftp.exception.PageTypeUnknownException            If page type unknown.
+     * @throws ftp.exception.FileActionAbortedException          If file action is aborted, because exceeded
+     *                                                           storage allocation.
+     * @throws ftp.exception.FileActionNotTakenException         If file is unavailable (e.g., file busy).
      * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
-     * @throws ftp.exception.ActionAbortedException              If action aborted.
+     * @throws ftp.exception.InsufficientStorageSpaceException   If there is insufficient storage space in system.
+     * @throws ftp.exception.FileNameNotAllowedException         If filename is not allowed.
      */
     public void sendFile(byte[] file, String pathName, OnBytesWriteListener listener)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            CantOpenDataConnectionException, ConnectionClosedException, ActionAbortedException,
-            FileActionNotTakenException, FileActionAbortedException, NeedAccountForStoringFilesException,
-            ActionNotTakenException {
+            CantOpenDataConnectionException, ConnectionClosedException, LocalErrorInProcessingException,
+            PageTypeUnknownException, FileActionAbortedException, FileActionNotTakenException,
+            NeedAccountForStoringFilesException, InsufficientStorageSpaceException, FileNameNotAllowedException {
         openPassiveDTP();
 
         Reply reply = control.sendCommand(Command.STORE + pathName);
@@ -514,11 +518,11 @@ public class FTPClient {
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      * @throws ftp.exception.FileActionNotTakenException If file unavailable (e.g., file busy).
-     * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     * @throws ftp.exception.FileUnavailableException    If file unavailable (e.g., file not found, no access).
      */
     public void deleteFile(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            FileActionNotTakenException, ActionNotTakenException {
+            FileActionNotTakenException, FileUnavailableException {
         Reply reply = control.sendCommand(Command.DELETE + pathName);
 
         switch (reply.code) {
