@@ -147,8 +147,6 @@ public class ControlConnection {
             connected = false;
         }
 
-        // FOR DEBUG
-        System.out.println(reply);
         return reply;
     }
 
