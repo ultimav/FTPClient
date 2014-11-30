@@ -432,18 +432,22 @@ public class FTPClient {
      * @throws ftp.exception.NoConnectionException               If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException         If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException                If user not logged in.
-     * @throws ftp.exception.FileActionNotTakenException         If file unavailable (e.g., file busy).
      * @throws ftp.exception.CantOpenDataConnectionException     If data connection can't be opened.
      * @throws ftp.exception.ConnectionClosedException           If connection closed.
-     * @throws ftp.exception.ActionNotTakenException             If action not taken.
+     * @throws ftp.exception.LocalErrorInProcessingException     If there is local error in processing.
+     * @throws ftp.exception.PageTypeUnknownException            If page type unknown.
+     * @throws ftp.exception.FileActionAbortedException          If file action is aborted, because exceeded
+     *                                                           storage allocation.
+     * @throws ftp.exception.FileActionNotTakenException         If file is unavailable (e.g., file busy).
      * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
-     * @throws ftp.exception.ActionAbortedException              If action aborted.
+     * @throws ftp.exception.InsufficientStorageSpaceException   If there is insufficient storage space in system.
+     * @throws ftp.exception.FileNameNotAllowedException         If filename is not allowed.
      */
     public void sendFile(byte[] file, String pathName, OnBytesWriteListener listener)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            CantOpenDataConnectionException, ConnectionClosedException, ActionAbortedException,
-            FileActionNotTakenException, FileActionAbortedException, NeedAccountForStoringFilesException,
-            ActionNotTakenException {
+            CantOpenDataConnectionException, ConnectionClosedException, LocalErrorInProcessingException,
+            PageTypeUnknownException, FileActionAbortedException, FileActionNotTakenException,
+            NeedAccountForStoringFilesException, InsufficientStorageSpaceException, FileNameNotAllowedException {
         openPassiveDTP();
 
         Reply reply = control.sendCommand(Command.STORE + pathName);
@@ -503,4 +507,34 @@ public class FTPClient {
         }
 
     }
+
+    /**
+     * This command causes the file specified in the pathname to be deleted at the server site.
+     *
+     * @param pathName path with name of file to delete.
+     *                 (only name if file is in the current directory).
+     * @throws java.io.IOException                       If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException       If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.FileActionNotTakenException If file unavailable (e.g., file busy).
+     * @throws ftp.exception.FileUnavailableException    If file unavailable (e.g., file not found, no access).
+     */
+    public void deleteFile(String pathName)
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            FileActionNotTakenException, FileUnavailableException {
+        Reply reply = control.sendCommand(Command.DELETE + pathName);
+
+        switch (reply.code) {
+            case ReplyCode.SERVICE_UNAVAILABLE:
+                throw new ServiceUnavailableException(reply.text);
+            case ReplyCode.NOT_LOGGED_IN:
+                throw new NotLoggedInException(reply.text);
+            case ReplyCode.FILE_ACTION_NOT_TAKEN:
+                throw new FileActionNotTakenException(reply.text);
+            case ReplyCode.FILE_UNAVAILABLE:
+                throw new FileUnavailableException(reply.text);
+        }
+    }
+
 }
