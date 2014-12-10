@@ -11,6 +11,10 @@ public interface ReplyCode {
      */
     int SERVICE_READY_IN_NNN_MINUTES = 120;
     /**
+     * Need account for login.
+     */
+    int NEED_ACCOUNT_FOR_LOGIN = 332;
+    /**
      * Indicates that service not available, closing control connection.
      * This may be a reply to any command if the service knows it must shut down.
      */
@@ -38,6 +42,27 @@ public interface ReplyCode {
      * Insufficient storage space in system.
      */
     int INSUFFICIENT_STORAGE_SPACE = 452;
+    /**
+     * Syntax error, command unrecognized.
+     * This may include errors such as command line too long.
+     */
+    int SYNTAX_ERROR = 500;
+    /**
+     * Syntax error in parameters or arguments.
+     */
+    int SYNTAX_ERROR_IN_PARAMS_OR_ARGS = 501;
+    /**
+     * Command not implemented.
+     */
+    int COMMAND_NOT_IMPLEMENTED = 502;
+    /**
+     * Bad sequence of commands.
+     */
+    int BAD_SEQUENCE_OF_COMMANDS = 503;
+    /**
+     * Command not implemented for that parameter.
+     */
+    int COMMAND_NOT_IMPLEMENTED_FOR_PARAM = 504;
     /**
      * Indicates that user not logged in.
      */

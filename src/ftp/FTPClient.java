@@ -24,13 +24,15 @@ public class FTPClient {
 
     private ControlConnection control;
     private DataConnection data;
+    private Debugger debugger;
 
     /**
      * Create FTP Client.
      */
     public FTPClient() {
-        control = new ControlConnection();
-        data = new DataConnection();
+        debugger = new Debugger();
+        control = new ControlConnection(debugger);
+        data = new DataConnection(debugger);
     }
 
     /**
@@ -65,10 +67,17 @@ public class FTPClient {
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void login(String user, String pass)
-            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException {
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            NeedAccountException {
         control.login(user, pass);
+    }
+
+
+    public boolean isConnected() {
+        return control.isConnected();
     }
 
     /**
@@ -79,9 +88,11 @@ public class FTPClient {
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public String printWorkingDirectory()
-            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException {
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            NeedAccountException {
         Reply reply = control.sendCommand(Command.PRINT_WORKING_DIRECTORY);
         switch (reply.code) {
             case ReplyCode.SERVICE_UNAVAILABLE:
@@ -89,7 +100,9 @@ public class FTPClient {
             case ReplyCode.NOT_LOGGED_IN:
                 throw new NotLoggedInException(reply.text);
         }
-        return reply.text;
+        int startIndex = reply.text.indexOf('"') + 1;
+        int stopIndex = reply.text.indexOf('"', startIndex);
+        return reply.text.substring(startIndex, stopIndex);
     }
 
     /**
@@ -102,10 +115,11 @@ public class FTPClient {
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void changeWorkingDirectory(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            ActionNotTakenException {
+            ActionNotTakenException, NeedAccountException {
         Reply reply = control.sendCommand(Command.CHANGE_WORKING_DIRECTORY + pathName);
         switch (reply.code) {
             case ReplyCode.SERVICE_UNAVAILABLE:
@@ -125,10 +139,11 @@ public class FTPClient {
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void changeToParentDirectory()
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            ActionNotTakenException {
+            ActionNotTakenException, NeedAccountException {
         Reply reply = control.sendCommand(Command.CHANGE_TO_PARENT_DIRECTORY);
         switch (reply.code) {
             case ReplyCode.SERVICE_UNAVAILABLE:
@@ -150,10 +165,11 @@ public class FTPClient {
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void makeDirectory(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            ActionNotTakenException {
+            ActionNotTakenException, NeedAccountException {
         Reply reply = control.sendCommand(Command.MAKE_DIRECTORY + pathName);
         switch (reply.code) {
             case ReplyCode.SERVICE_UNAVAILABLE:
@@ -176,10 +192,11 @@ public class FTPClient {
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void removeDirectory(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            ActionNotTakenException {
+            ActionNotTakenException, NeedAccountException {
         Reply reply = control.sendCommand(Command.REMOVE_DIRECTORY + pathName);
         switch (reply.code) {
             case ReplyCode.SERVICE_UNAVAILABLE:
@@ -196,19 +213,19 @@ public class FTPClient {
      *
      * @param fromPathName old file name (with full path, or without if file is in current working directory).
      * @param toPathName   new file name (with full path, or without if file is in current working directory).
-     * @throws java.io.IOException                               If an I/O error occurs.
-     * @throws ftp.exception.NoConnectionException               If there is no connection.
-     * @throws ftp.exception.ServiceUnavailableException         If ftp server is unavailable.
-     * @throws ftp.exception.NotLoggedInException                If user not logged in.
-     * @throws ftp.exception.ActionNotTakenException             If action not taken.
-     * @throws ftp.exception.FileActionNotTakenException         If file unavailable (e.g., file busy).
-     * @throws ftp.exception.FileNameNotAllowedException         If file nam is not allowed.
-     * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
+     * @throws java.io.IOException                       If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException       If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.ActionNotTakenException     If action not taken.
+     * @throws ftp.exception.FileActionNotTakenException If file unavailable (e.g., file busy).
+     * @throws ftp.exception.FileNameNotAllowedException If file nam is not allowed.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void renameFromTo(String fromPathName, String toPathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             ActionNotTakenException, FileActionNotTakenException, FileNameNotAllowedException,
-            NeedAccountForStoringFilesException {
+            NeedAccountException {
         Reply reply = control.sendCommand(Command.RENAME_FROM + fromPathName);
 
         switch (reply.code) {
@@ -232,7 +249,7 @@ public class FTPClient {
             case ReplyCode.FILE_NAME_NOT_ALLOWED:
                 throw new FileNameNotAllowedException(reply.text);
             case ReplyCode.NEED_ACCOUNT_FOR_STORING_FILES:
-                throw new NeedAccountForStoringFilesException(reply.text);
+                throw new NeedAccountException(reply.text);
         }
     }
 
@@ -243,9 +260,11 @@ public class FTPClient {
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     private void openPassiveDTP()
-            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException {
+            throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
+            NeedAccountException {
         Reply reply = control.sendCommand(Command.PASSIVE);
 
         switch (reply.code) {
@@ -278,12 +297,13 @@ public class FTPClient {
      * @throws ftp.exception.CantOpenDataConnectionException If data connection can't be opened.
      * @throws ftp.exception.ConnectionClosedException       If connection closed.
      * @throws ftp.exception.ActionAbortedException          If action aborted.
+     * @throws ftp.exception.NeedAccountException            If user need account for action.
      */
     public ArrayList<RemoteFile> getFilesList()
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             FileActionNotTakenException, CantOpenDataConnectionException, ConnectionClosedException,
-            ActionAbortedException {
-        return getFilesList("");
+            ActionAbortedException, NeedAccountException {
+        return getFilesList(null);
     }
 
     /**
@@ -299,14 +319,16 @@ public class FTPClient {
      * @throws ftp.exception.CantOpenDataConnectionException If data connection can't be opened.
      * @throws ftp.exception.ConnectionClosedException       If connection closed.
      * @throws ftp.exception.ActionAbortedException          If action aborted.
+     * @throws ftp.exception.NeedAccountException            If user need account for action.
      */
     public ArrayList<RemoteFile> getFilesList(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             FileActionNotTakenException, CantOpenDataConnectionException, ConnectionClosedException,
-            ActionAbortedException {
+            ActionAbortedException, NeedAccountException {
         openPassiveDTP();
 
-        Reply reply = control.sendCommand(Command.LIST + pathName);
+        String listCommand = (pathName == null) ? Command.LIST : Command.LIST + " " + pathName;
+        Reply reply = control.sendCommand(listCommand);
 
         switch (reply.code) {
             case ReplyCode.FILE_ACTION_NOT_TAKEN:
@@ -330,8 +352,6 @@ public class FTPClient {
         }
 
         reply = control.readReply();
-
-        data.close();
 
         switch (reply.code) {
             case ReplyCode.CANT_OPEN_DATA_CONNECTION:
@@ -362,11 +382,12 @@ public class FTPClient {
      * @throws ftp.exception.ConnectionClosedException       If connection closed.
      * @throws ftp.exception.ActionAbortedException          If action aborted.
      * @throws ftp.exception.ActionNotTakenException         If action not taken.
+     * @throws ftp.exception.NeedAccountException            If user need account for action.
      */
     public byte[] getFile(String pathName, OnBytesReadListener listener)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             CantOpenDataConnectionException, ConnectionClosedException, ActionAbortedException,
-            FileActionNotTakenException, ActionNotTakenException {
+            FileActionNotTakenException, ActionNotTakenException, NeedAccountException {
         byte[] file;
 
         openPassiveDTP();
@@ -428,26 +449,26 @@ public class FTPClient {
      * @param pathName path with name of file to store.
      *                 (only name if file is in the current directory).
      * @param listener bytes write listener.
-     * @throws java.io.IOException                               If an I/O error occurs.
-     * @throws ftp.exception.NoConnectionException               If there is no connection.
-     * @throws ftp.exception.ServiceUnavailableException         If ftp server is unavailable.
-     * @throws ftp.exception.NotLoggedInException                If user not logged in.
-     * @throws ftp.exception.CantOpenDataConnectionException     If data connection can't be opened.
-     * @throws ftp.exception.ConnectionClosedException           If connection closed.
-     * @throws ftp.exception.LocalErrorInProcessingException     If there is local error in processing.
-     * @throws ftp.exception.PageTypeUnknownException            If page type unknown.
-     * @throws ftp.exception.FileActionAbortedException          If file action is aborted, because exceeded
-     *                                                           storage allocation.
-     * @throws ftp.exception.FileActionNotTakenException         If file is unavailable (e.g., file busy).
-     * @throws ftp.exception.NeedAccountForStoringFilesException If user need account for storing files.
-     * @throws ftp.exception.InsufficientStorageSpaceException   If there is insufficient storage space in system.
-     * @throws ftp.exception.FileNameNotAllowedException         If filename is not allowed.
+     * @throws java.io.IOException                             If an I/O error occurs.
+     * @throws ftp.exception.NoConnectionException             If there is no connection.
+     * @throws ftp.exception.ServiceUnavailableException       If ftp server is unavailable.
+     * @throws ftp.exception.NotLoggedInException              If user not logged in.
+     * @throws ftp.exception.CantOpenDataConnectionException   If data connection can't be opened.
+     * @throws ftp.exception.ConnectionClosedException         If connection closed.
+     * @throws ftp.exception.LocalErrorInProcessingException   If there is local error in processing.
+     * @throws ftp.exception.PageTypeUnknownException          If page type unknown.
+     * @throws ftp.exception.FileActionAbortedException        If file action is aborted, because exceeded
+     *                                                         storage allocation.
+     * @throws ftp.exception.FileActionNotTakenException       If file is unavailable (e.g., file busy).
+     * @throws ftp.exception.NeedAccountException              If user need account for action.
+     * @throws ftp.exception.InsufficientStorageSpaceException If there is insufficient storage space in system.
+     * @throws ftp.exception.FileNameNotAllowedException       If filename is not allowed.
      */
     public void sendFile(byte[] file, String pathName, OnBytesWriteListener listener)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
             CantOpenDataConnectionException, ConnectionClosedException, LocalErrorInProcessingException,
             PageTypeUnknownException, FileActionAbortedException, FileActionNotTakenException,
-            NeedAccountForStoringFilesException, InsufficientStorageSpaceException, FileNameNotAllowedException {
+            NeedAccountException, InsufficientStorageSpaceException, FileNameNotAllowedException {
         openPassiveDTP();
 
         Reply reply = control.sendCommand(Command.STORE + pathName);
@@ -470,7 +491,7 @@ public class FTPClient {
             case ReplyCode.FILE_ACTION_NOT_TAKEN:
                 throw new FileActionNotTakenException(reply.text);
             case ReplyCode.NEED_ACCOUNT_FOR_STORING_FILES:
-                throw new NeedAccountForStoringFilesException(reply.text);
+                throw new NeedAccountException(reply.text);
             case ReplyCode.INSUFFICIENT_STORAGE_SPACE:
                 throw new InsufficientStorageSpaceException(reply.text);
             case ReplyCode.FILE_NAME_NOT_ALLOWED:
@@ -499,7 +520,7 @@ public class FTPClient {
             case ReplyCode.FILE_ACTION_NOT_TAKEN:
                 throw new FileActionNotTakenException(reply.text);
             case ReplyCode.NEED_ACCOUNT_FOR_STORING_FILES:
-                throw new NeedAccountForStoringFilesException(reply.text);
+                throw new NeedAccountException(reply.text);
             case ReplyCode.INSUFFICIENT_STORAGE_SPACE:
                 throw new InsufficientStorageSpaceException(reply.text);
             case ReplyCode.FILE_NAME_NOT_ALLOWED:
@@ -519,10 +540,11 @@ public class FTPClient {
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
      * @throws ftp.exception.FileActionNotTakenException If file unavailable (e.g., file busy).
      * @throws ftp.exception.FileUnavailableException    If file unavailable (e.g., file not found, no access).
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void deleteFile(String pathName)
             throws IOException, NoConnectionException, ServiceUnavailableException, NotLoggedInException,
-            FileActionNotTakenException, FileUnavailableException {
+            FileActionNotTakenException, FileUnavailableException, NeedAccountException {
         Reply reply = control.sendCommand(Command.DELETE + pathName);
 
         switch (reply.code) {
@@ -535,6 +557,10 @@ public class FTPClient {
             case ReplyCode.FILE_UNAVAILABLE:
                 throw new FileUnavailableException(reply.text);
         }
+    }
+
+    public void setDebugListener(Debugger.DebugListener listener) {
+        debugger.setListener(listener);
     }
 
 }

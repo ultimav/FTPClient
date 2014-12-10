@@ -1,5 +1,7 @@
 package ftp.connection;
 
+import ftp.Debugger;
+import ftp.exception.NeedAccountException;
 import ftp.exception.NoConnectionException;
 import ftp.exception.NotLoggedInException;
 import ftp.exception.ServiceUnavailableException;
@@ -15,6 +17,14 @@ import java.net.Socket;
  */
 public class ControlConnection {
 
+    private static final String DEBUG_TAG = "CONTROL";
+    private static final String OPEN = "OPEN";
+    private static final String CLOSE = "CLOSE";
+    private static final String LOGIN = "LOGIN";
+    private static final String REPLY = "REPLY: ";
+    private static final String RESTORE_CONNECTION = "RESTORE_CONNECTION";
+    private static final String SEND_COMMAND = "SEND_COMMAND: ";
+
     boolean connectionEstablished = false;
     boolean connected = false;
     private Socket socket = null;
@@ -24,6 +34,11 @@ public class ControlConnection {
     private int port = -1;
     private String user = null;
     private String pass = null;
+    private Debugger debugger;
+
+    public ControlConnection(Debugger debugger) {
+        this.debugger = debugger;
+    }
 
     /**
      * Establish control connection to the FTP server.
@@ -40,10 +55,16 @@ public class ControlConnection {
         }
         this.host = host;
         this.port = port;
+
+        debugger.writeMassage(DEBUG_TAG, OPEN + " " + host + ":" + port);
+
         socket = new Socket(host, port);
         writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         Reply reply = readReply();
+
+        debugger.writeMassage(DEBUG_TAG, REPLY + reply);
+
         switch (reply.code) {
             case ReplyCode.SERVICE_READY_IN_NNN_MINUTES:
             case ReplyCode.SERVICE_UNAVAILABLE:
@@ -60,6 +81,8 @@ public class ControlConnection {
      */
     public void close()
             throws IOException {
+        debugger.writeMassage(DEBUG_TAG, CLOSE);
+
         if (socket != null && socket.isConnected()) {
             socket.close();
             socket = null;
@@ -77,23 +100,40 @@ public class ControlConnection {
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public void login(String user, String pass)
-            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
+            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException,
+            NeedAccountException {
+
+        debugger.writeMassage(DEBUG_TAG, LOGIN);
+
         if (connected) {
             this.user = user;
             this.pass = pass;
-            writer.println(Command.USER + user);
-            writer.println(Command.PASS + pass);
+            writer.print(Command.USER + user + "\r\n");
             writer.flush();
             Reply reply;
             reply = readReply();
+
+            debugger.writeMassage(DEBUG_TAG, REPLY + reply);
+
             switch (reply.code) {
                 case ReplyCode.SERVICE_UNAVAILABLE:
                     close();
                     throw new ServiceUnavailableException(reply.text);
+                case ReplyCode.NOT_LOGGED_IN:
+                    throw new NotLoggedInException(reply.text);
+                case ReplyCode.NEED_ACCOUNT_FOR_LOGIN:
+                    throw new NeedAccountException(reply.text);
             }
+
+            writer.print(Command.PASS + pass + "\r\n");
+            writer.flush();
             reply = readReply();
+
+            debugger.writeMassage(DEBUG_TAG, REPLY + reply);
+
             switch (reply.code) {
                 case ReplyCode.SERVICE_UNAVAILABLE:
                     close();
@@ -107,6 +147,17 @@ public class ControlConnection {
         }
     }
 
+    public boolean isConnected() {
+        try {
+            while (hasUnreadReply()) {
+                readReply();
+            }
+        } catch (IOException e) {
+            connected = false;
+        }
+        return connected;
+    }
+
     /**
      * Restore the connection if the time is up.
      *
@@ -114,9 +165,13 @@ public class ControlConnection {
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     private void restoreConnection()
-            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
+            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException,
+            NeedAccountException {
+        debugger.writeMassage(DEBUG_TAG, RESTORE_CONNECTION);
+
         open(host, port);
         login(user, pass);
     }
@@ -145,6 +200,7 @@ public class ControlConnection {
 
         if (reply.code == ReplyCode.SERVICE_UNAVAILABLE) {
             connected = false;
+            socket.close();
         }
 
         return reply;
@@ -159,11 +215,15 @@ public class ControlConnection {
      * @throws ftp.exception.NoConnectionException       If there is no connection.
      * @throws ftp.exception.ServiceUnavailableException If ftp server is unavailable.
      * @throws ftp.exception.NotLoggedInException        If user not logged in.
+     * @throws ftp.exception.NeedAccountException        If user need account for action.
      */
     public Reply sendCommand(String command)
-            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException {
+            throws IOException, ServiceUnavailableException, NoConnectionException, NotLoggedInException,
+            NeedAccountException {
+        debugger.writeMassage(DEBUG_TAG, SEND_COMMAND + command);
+
         if (connected) {
-            if (socket.getInputStream().available() > 0) {
+            if (hasUnreadReply()) {
                 Reply reply = readReply();
                 if (reply.code == ReplyCode.SERVICE_UNAVAILABLE) {
                     if (connectionEstablished) {
@@ -176,9 +236,14 @@ public class ControlConnection {
                     return sendCommand(command);
                 }
             } else {
-                writer.println(command);
+                writer.print(command + "\r\n");
                 writer.flush();
-                return readReply();
+
+                Reply reply = readReply();
+
+                debugger.writeMassage(DEBUG_TAG, REPLY + reply);
+
+                return reply;
             }
         } else {
             if (connectionEstablished) {
@@ -188,6 +253,10 @@ public class ControlConnection {
                 throw new NoConnectionException();
             }
         }
+    }
+
+    private boolean hasUnreadReply() throws IOException {
+        return socket.getInputStream().available() > 0;
     }
 
 }
